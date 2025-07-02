@@ -13,8 +13,8 @@ requisitos.tr = 2.0;  % Tempo de subida
 requisitos.Mp = 0.05; % Sobressinal
 
 % referência de altitude
-referencia.amplitude = 2.0; % Altitude desejada em metros
-referencia.instante = 1.0;  % Drone começa a subir em t=1s
+referencia.amplitude = 1.0; % Altitude desejada em metros
+referencia.instante = 0;  % Drone começa a subir em t=1s
 
 model_name = 'drone'; 
 
@@ -37,48 +37,70 @@ tempo_degrau = referencia.instante;
 Forca_Gravidade = planta.m * planta.g;
 
 
-
-%Execução
-out = sim(model_name, 'StopTime', '15');
-
-
 % Gráficos
 nomes_modos = {'Sem Filtro', 'Filtro Passa-Baixas', 'Filtro de Kalman'};
 titulo_base = ['Análise de Controle de Altitude: ', nomes_modos{modo}];
 
-% Desempenho do Rastreamento de Altitude
-figure('Name', [titulo_base, ' - Rastreamento'], 'NumberTitle', 'off');
-hold on; grid on;
-plot(out.z.time, out.z.signals.values, 'b-', 'LineWidth', 2);
-plot(out.zf.time, out.zf.signals.values, 'g--', 'LineWidth', 2);
-yline(z_referencia, 'k:', 'LineWidth', 1.5, 'DisplayName', 'Referência');
-title('Desempenho do Rastreamento de Altitude');
-xlabel('Tempo (s)');
-ylabel('Altitude (m)');
-legend('Altitude Real (z)', 'Altitude Usada para Controle (zf)');
-hold off;
+z = cell(3, 1);
+zm = cell(3, 1);
+u = cell(3, 1);
+zf = cell(3, 1);
 
-% Esforço de Controle
-figure('Name', [titulo_base, ' - Controle'], 'NumberTitle', 'off');
-hold on; grid on;
-plot(out.u.time, out.u.signals.values, 'r-');
-title('Esforço de Controle (Força de Empuxo)');
-xlabel('Tempo (s)');
-ylabel('Força (N)');
-legend('Comando de Controle u(t)');
-if modo == 1
-    text(0.5, 0.8, 'Controle MUITO ruidoso!', 'Units', 'normalized', 'Color', 'red', 'FontSize', 12, 'FontWeight', 'bold');
+varzs = [0.1, 0.01, 0.001, 0];
+
+for i=1:length(varzs)
+    varz = varzs(i);
+
+    % Rodando a simulacao
+    out = sim(model_name, 'StopTime', '10');
+    
+    z{i} = out.z;
+    u{i} = out.u;
+    zm{i} = out.zm;
+    zf{i} = out.zf;
 end
-hold off;
 
-% Análise da Qualidade da Filtragem
+colors = get(0, 'DefaultAxesColorOrder');
+
+legs = {};
+for i=1:length(varzs)
+    legs{i} = sprintf('\\sigma_h^2 = %g ft^2', varzs(i));
+end
+
+figure('Name', [titulo_base, ' - Desempenho'], 'NumberTitle', 'off');
+hold on;
+grid on;
+for i=1:length(varzs)
+    plot(z{i}.time, z{i}.signals.values, 'Color', colors(i, :));
+end
+title('Desempenho do Controlador de Altitude com Vários Ruídos');
+xlabel('Tempo (s)', 'FontSize', 14);
+ylabel('Altura (m)', 'FontSize', 14);
+legend(legs, 'FontSize', 12, 'Location', 'Southeast');
+set(gca, 'FontSize', 14);
+
 figure('Name', [titulo_base, ' - Filtragem'], 'NumberTitle', 'off');
-hold on; grid on;
-plot(out.z.time, out.z.signals.values, 'b-', 'LineWidth', 2);
-plot(out.zm.time, out.zm.signals.values, 'r.', 'MarkerSize', 2);
-plot(out.zf.time, out.zf.signals.values, 'g-', 'LineWidth', 2);
+hold on;
+grid on;
+plot(zm{1}.time, zm{1}.signals.values, 'r.', 'MarkerSize', 2);
+plot(zf{1}.time, zf{1}.signals.values, 'g-', 'LineWidth', 2);
+plot(z{1}.time, z{1}.signals.values, 'b-', 'LineWidth', 2);
 title('Análise da Qualidade da Filtragem');
 xlabel('Tempo (s)');
 ylabel('Altitude (m)');
-legend('Altitude Real (z)', 'Medida Ruidosa (zm)', 'Altitude Filtrada (zf)');
-hold off;
+legend('Medida Ruidosa (zm)', 'Altitude Filtrada (zf)', 'Altitude Real (z)');
+set(gca, 'FontSize', 14);
+
+
+figure('Name', [titulo_base, ' - Comando'], 'NumberTitle', 'off');
+hold on;
+grid on;
+for i=1:length(varzs)
+    plot(u{i}.time, u{i}.signals.values, 'Color', colors(i, :));
+end
+title('Comando do Controlador de Altitude com Vários Ruídos');
+xlabel('Tempo (s)', 'FontSize', 14);
+ylabel('Força Comandada (N)', 'FontSize', 14);
+legend(legs, 'FontSize', 12, 'Location', 'Southeast');
+set(gca, 'FontSize', 14);
+
