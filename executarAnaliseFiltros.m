@@ -15,7 +15,7 @@ requisitos.Mp = 0.05; % Sobressinal
 
 % referência de altitude
 referencia.amplitude = 1.0; % Altitude desejada em metros
-referencia.instante = 0;  % Drone começa a subir em t=1s
+referencia.instante = 0;  % Drone começa a subir em t=0s
 
 model_name = 'drone'; 
 
@@ -78,7 +78,7 @@ for j=1:length(MODO_FILTRO)
     for i=1:length(varzs)
         plot(z{i}.time, z{i}.signals.values, 'Color', colors(i, :));
     end
-    title('Desempenho do Controlador de Altitude com Vários Ruídos');
+    title('Desempenho do Controlador de Altitude');
     xlabel('Tempo (s)', 'FontSize', 14);
     ylabel('Altura (m)', 'FontSize', 14);
     legend(legs, 'FontSize', 12, 'Location', 'Southeast');
@@ -104,7 +104,7 @@ for j=1:length(MODO_FILTRO)
     for i=1:length(varzs)
         plot(u{i}.time, u{i}.signals.values, 'Color', colors(i, :));
     end
-    title('Comando do Controlador de Altitude com Vários Ruídos');
+    title('Comando do Controlador de Altitude');
     xlabel('Tempo (s)', 'FontSize', 14);
     ylabel('Força Comandada (N)', 'FontSize', 14);
     legend(legs, 'FontSize', 12, 'Location', 'Southeast');
